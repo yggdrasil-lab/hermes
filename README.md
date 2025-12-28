@@ -97,6 +97,26 @@ hermes/
 │   ├── models/       # Pydantic schemas
 │   ├── services/     # Logic for notification providers (Email, Discord, etc.)
 │   └── main.py       # FastAPI application and routes
+├── integration_test/ # Integration test suite
 ├── requirements.txt  # Python dependencies
 └── Dockerfile        # Production build configuration
 ```
+
+## Integration Testing
+
+An integration test suite is included to verify both the HTTP API and SMTP interface functionality.
+
+1. Navigate to the test directory:
+   ```bash
+   cd integration_test
+   ```
+2. Run the tests using Docker Compose:
+   ```bash
+   docker compose up
+   ```
+   
+   This will:
+   - Spin up a temporary tester container connected to the `aether-net` network.
+   - Send a test request to the HTTP API (`POST /notify`).
+   - Send a test email to the SMTP server (port 2525).
+   - Output success/failure logs to the console.
