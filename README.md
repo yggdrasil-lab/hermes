@@ -1,94 +1,44 @@
-# Hermes: Unified Notification Gateway
+# Hermes
 
-Hermes is a centralized microservice for handling multi-channel notifications. Currently, it supports sending emails via AWS SES, with planned support for Discord and other channels.
+> I am Hermes, the Winged Messenger of the Yggdrasil ecosystem. My domain is Notifications, Messaging, and the Flow of Information. I carry the master's words across the digital divide.
 
-## Features
+## Mission
 
-- **Multi-channel support**: Easily extensible architecture for different notification providers.
-- **RESTful API**: Simple POST endpoint for triggering notifications.
-- **Dockerized**: Ready for production deployment using Docker.
-- **Validation**: Strict schema validation using Pydantic.
+I am the central switchboard of your infrastructure. My mission is to ensure that no critical alert or security token remains unheard. I translate the internal signals of your servers into the clear voice of email or the chime of chat, routing information where it is needed most.
+
+## Core Philosophy
+
+*   **Unified Input**: I am the single entry point for all notifications. No matter the source, the interface remains consistent.
+*   **Smart Routing**: I choose the path that fits the priority—Email for permanence and logs, Chat for immediate attention.
+*   **Abstraction**: I hide the complexities of external cloud APIs, allowing the rest of the infrastructure to remain decoupled and focused.
+
+---
 
 ## Tech Stack
 
-- **Python 3.11+**
-- **FastAPI**
-- **Boto3** (AWS SDK)
-- **Pydantic Settings** (Configuration management)
+*   **Python 3.11+**: Primary programming language.
+*   **FastAPI**: Web framework for the REST API.
+*   **Boto3**: AWS SDK for direct Amazon SES integration.
+*   **aiosmtpd**: Asynchronous SMTP server library.
 
-## Getting Started
+## Architecture
 
-### Prerequisites
+The system operates through the following components:
 
-- AWS Account with SES (Simple Email Service) configured.
-- Verified Sender Identity (Email or Domain) in AWS SES.
-- Docker (optional, for containerized deployment).
+1.  **HTTP Interface**: A RESTful API for modern service integration.
+2.  **SMTP Gateway**: A listener on port 2525 for legacy mail routing (e.g., Authelia).
+3.  **Modular Provider Logic**: An extensible backend supporting AWS SES (Current) and Discord (Planned).
 
-### Configuration
+## Prerequisites
 
-1. Copy the example environment file:
-   ```bash
-   cp .env.example .env
-   ```
-2. Update the `.env` file with your credentials:
-   - `AWS_ACCESS_KEY_ID`: Your AWS access key.
-   - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key.
-   - `AWS_REGION`: The AWS region where SES is configured (e.g., `us-east-1`).
-   - `EMAIL_SENDER`: The verified email address you are sending from.
+- **AWS Account**: Verified Sender Identity in Amazon SES.
+- **Docker & Docker Compose**
+- **aether-net**: External Docker network.
+  ```bash
+  docker network create aether-net || true
+  ```
 
-### Running with Docker
-
-1. Build the image:
-   ```bash
-   docker build -t hermes .
-   ```
-2. Run the container:
-   ```bash
-   docker run --env-file .env -p 8000:8000 hermes
-   ```
-
-### Running Locally (Development)
-
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Start the server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-## API Usage
-
-### Send a Notification
-
-**Endpoint:** `POST /notify`
-
-**Request Body:**
-
-```json
-{
-  "channel": "email",
-  "recipient": "recipient@example.com",
-  "subject": "Test Notification",
-  "body": "This is a notification sent via Hermes."
-}
-```
-
-**Example with cURL:**
-
-```bash
-curl -X POST http://localhost:8000/notify \
-  -H "Content-Type: application/json" \
-  -d '{
-    "channel": "email",
-    "recipient": "user@example.com",
-    "subject": "Hello",
-    "body": "World"
-  }'
-```
-
-## Project Structure
+## Directory Structure
 
 ```text
 hermes/
@@ -102,21 +52,58 @@ hermes/
 └── Dockerfile        # Production build configuration
 ```
 
+## Setup Instructions
+
+### 1. Repository Initialization
+
+```bash
+git clone <your-repository-url> hermes
+cd hermes
+cp .env.example .env
+```
+
+### 2. Configuration
+
+Update `.env` with your IAM credentials and verified sender:
+- `AWS_ACCESS_KEY_ID`: IAM Access Key.
+- `AWS_SECRET_ACCESS_KEY`: IAM Secret Key.
+- `AWS_REGION`: AWS Region (e.g., `ap-southeast-2`).
+- `EMAIL_SENDER`: Your verified sender address.
+
+## Execution
+
+### Docker Deployment
+```bash
+docker compose up -d
+```
+
+### Local Development
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+## Usage
+
+### 1. HTTP API
+**Endpoint:** `POST /notify`
+```bash
+curl -X POST http://localhost:8000/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channel": "email",
+    "recipient": "user@example.com",
+    "subject": "Hello",
+    "body": "World"
+  }'
+```
+
+### 2. SMTP Gateway
+Connect legacy services to port **2525**. Incoming mail will be relayed via the configured SES identity.
+
 ## Integration Testing
 
-An integration test suite is included to verify both the HTTP API and SMTP interface functionality.
-
-1. Navigate to the test directory:
-   ```bash
-   cd integration_test
-   ```
-2. Run the tests using Docker Compose:
-   ```bash
-   docker compose up
-   ```
-   
-   This will:
-   - Spin up a temporary tester container connected to the `aether-net` network.
-   - Send a test request to the HTTP API (`POST /notify`).
-   - Send a test email to the SMTP server (port 2525).
-   - Output success/failure logs to the console.
+```bash
+cd integration_test
+docker compose up
+```
