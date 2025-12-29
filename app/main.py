@@ -19,7 +19,8 @@ async def send_notification(request: NotificationRequest):
             response = email_service.send_email(
                 recipient=request.recipient,
                 subject=request.subject,
-                body=request.body
+                body=request.body,
+                sender=request.sender
             )
             return {"status": "success", "message_id": response["MessageId"]}
         except ClientError as e:

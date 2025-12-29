@@ -29,11 +29,12 @@ class HermesSMTPHandler:
 
             # Iterate over recipients (SMTP allows multiple RCPT TO)
             for recipient in envelope.rcpt_tos:
-                print(f"Relaying SMTP email to {recipient} via SES...")
+                print(f"Relaying SMTP email to {recipient} via SES (sender: {envelope.mail_from})...")
                 self.email_service.send_email(
                     recipient=recipient,
                     subject=subject,
-                    body=body or " " # SES doesn't like empty body
+                    body=body or " ", # SES doesn't like empty body
+                    sender=envelope.mail_from
                 )
             
             return '250 Message accepted for delivery'

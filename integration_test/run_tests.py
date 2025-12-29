@@ -17,7 +17,7 @@ def generate_id():
 
 def test_smtp():
     print(f"\n[SMTP] Testing SMTP delivery to {HERMES_HOST}:2525...")
-    sender = "tester@hermes.local"
+    sender = "no-reply@tienzo.net"
     subject = f"Hermes SMTP Test [{generate_id()}]"
     body = "This is a test message sent via the Hermes SMTP interface."
     
@@ -41,6 +41,7 @@ def test_http():
     data = {
         "channel": "email",
         "recipient": RECIPIENT,
+        "sender": "no-reply@tienzo.net",
         "subject": f"Hermes HTTP Test [{generate_id()}]",
         "body": "This is a test message sent via the Hermes HTTP API."
     }

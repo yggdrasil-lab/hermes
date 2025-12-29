@@ -11,8 +11,8 @@ class EmailService:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
-    def send_email(self, recipient: str, subject: str, body: str) -> dict:
-        sender = settings.EMAIL_SENDER
+    def send_email(self, recipient: str, subject: str, body: str, sender: str = None) -> dict:
+        sender = sender or settings.EMAIL_SENDER
         charset = "UTF-8"
 
         try:
