@@ -150,3 +150,5 @@ cython_debug/
 
 # OS X
 .DS_Store
+
+docker-compose.override.yml
