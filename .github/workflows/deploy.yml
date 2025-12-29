@@ -19,4 +19,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ vars.AWS_REGION }}
           EMAIL_SENDER: ${{ vars.EMAIL_SENDER }}
+          ENV: ${{ vars.ENV }}
         run: docker compose up -d --build --remove-orphans

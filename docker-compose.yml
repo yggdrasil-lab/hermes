@@ -12,6 +12,7 @@ services:
       - AWS_SECRET_ACCESS_KEY
       - AWS_REGION
       - EMAIL_SENDER
+      - ENV
     networks:
       - aether-net
     restart: unless-stopped

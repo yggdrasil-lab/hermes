@@ -13,6 +13,10 @@ class EmailService:
 
     def send_email(self, recipient: str, subject: str, body: str, sender: str = None) -> dict:
         sender = sender or settings.EMAIL_SENDER
+        
+        if settings.ENV:
+            subject = f"[{settings.ENV}] {subject}"
+
         charset = "UTF-8"
 
         try:

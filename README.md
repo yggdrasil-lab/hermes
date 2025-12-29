@@ -69,6 +69,7 @@ Update `.env` with your IAM credentials and verified sender:
 - `AWS_SECRET_ACCESS_KEY`: IAM Secret Key.
 - `AWS_REGION`: AWS Region (e.g., `ap-southeast-2`).
 - `EMAIL_SENDER`: Your verified sender address.
+- `ENV` (Optional): Environment tag prepended to email subjects (e.g., `DEV`, `PROD`).
 
 ## Execution
 
