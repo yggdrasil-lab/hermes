@@ -73,16 +73,14 @@ Update `.env` with your IAM credentials and verified sender:
 
 ## Execution
 
-### Docker Deployment
+### Development (Local)
+For local development, use the provided start script which handles network creation, building, and running the containers:
 ```bash
-docker compose up -d
+./start_dev.sh
 ```
 
-### Local Development
-```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+### Production Deployment
+Production deployment is handled automatically via the GitHub Actions workflow defined in `.github/workflows/deploy.yml`.
 
 ## Usage
 
