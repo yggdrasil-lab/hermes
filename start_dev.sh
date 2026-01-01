@@ -3,11 +3,7 @@ set -e
 
 echo "Starting Hermes in Development mode..."
 
-# Define network name
-NETWORK_NAME="aether-net"
 
-# Ensure network exists
-docker network inspect "$NETWORK_NAME" >/dev/null 2>&1 || docker network create "$NETWORK_NAME"
 
 # Check if .env file exists
 if [ ! -f .env ]; then
@@ -16,6 +12,9 @@ if [ ! -f .env ]; then
     echo "Then update it with your configuration and secrets."
     exit 1
 fi
+
+# Stop running containers
+docker compose down
 
 # Build and start the containers
 docker compose up --build -d
