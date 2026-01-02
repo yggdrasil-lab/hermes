@@ -2,11 +2,20 @@ version: '3.8'
 
 services:
   hermes:
+    image: hermes:latest
     build: .
     container_name: hermes
     ports:
       - "8000:8000"
       - "2525:2525"
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
     environment:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
