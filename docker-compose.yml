@@ -1,10 +1,9 @@
-version: '3.8'
-
 services:
   hermes:
     image: hermes:latest
     build: .
-    container_name: hermes
+    labels:
+      - "com.docker.compose.project=${STACK_NAME}"
     ports:
       - "8000:8000"
       - "2525:2525"
