@@ -74,10 +74,7 @@ Update `.env` with your IAM credentials and verified sender:
 ## Execution
 
 ### Development (Local)
-For local development, use the provided start script which handles network creation, building, and running the containers:
-```bash
-./start_dev.sh
-```
+For local development, you can use `docker compose up --build`. Ensure your `.env` file is populated.
 
 ### Production Deployment
 Production deployment is handled automatically via the GitHub Actions workflow defined in `.github/workflows/deploy.yml`.
