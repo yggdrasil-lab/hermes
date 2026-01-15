@@ -23,5 +23,5 @@ jobs:
           EMAIL_SENDER: ${{ vars.EMAIL_SENDER }}
           ENV: ${{ vars.ENV }}
         run: |
-          chmod +x start.sh
-          ./start.sh
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh "hermes" docker-compose.yml
