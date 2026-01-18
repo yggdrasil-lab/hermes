@@ -22,6 +22,7 @@ jobs:
           AWS_REGION: ${{ vars.AWS_REGION }}
           EMAIL_SENDER: ${{ vars.EMAIL_SENDER }}
           ENV: ${{ vars.ENV }}
+          REGISTRY_PREFIX: ${{ vars.REGISTRY_PREFIX }}
         run: |
           chmod +x scripts/deploy.sh
           ./scripts/deploy.sh "hermes" docker-compose.yml

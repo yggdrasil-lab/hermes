@@ -1,6 +1,6 @@
 services:
   hermes:
-    image: hermes:latest
+    image: ${REGISTRY_PREFIX}hermes:${STACK_NAME:-latest}
     build: .
     labels:
       - "com.docker.compose.project=${STACK_NAME}"
