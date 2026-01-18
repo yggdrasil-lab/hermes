@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     EMAIL_SENDER: str  # Verified SES identity email
     ENV: Optional[str] = None
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        secrets_dir="/run/secrets"
+    )
 
 settings = Settings()

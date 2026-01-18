@@ -16,14 +16,25 @@ services:
       restart_policy:
         condition: on-failure
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
       - AWS_REGION
       - EMAIL_SENDER
       - ENV
     networks:
       - aether-net
+    secrets:
+      - source: hermes_aws_access_key_id
+        target: AWS_ACCESS_KEY_ID
+      - source: hermes_aws_secret_access_key
+        target: AWS_SECRET_ACCESS_KEY
     restart: unless-stopped
+
+secrets:
+  hermes_aws_access_key_id:
+    external: true
+    name: ${HERMES_AWS_ACCESS_KEY_ID_NAME}
+  hermes_aws_secret_access_key:
+    external: true
+    name: ${HERMES_AWS_SECRET_ACCESS_KEY_NAME}
 
 networks:
   aether-net:
