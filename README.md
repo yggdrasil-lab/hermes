@@ -33,10 +33,7 @@ The system operates through the following components:
 
 - **AWS Account**: Verified Sender Identity in Amazon SES.
 - **Docker & Docker Compose**
-- **aether-net**: External Docker network.
-  ```bash
-  docker network create aether-net || true
-  ```
+- **aether-net**: External Docker network (see `Forge/yggdrasil-os`).
 
 ## Directory Structure
 
