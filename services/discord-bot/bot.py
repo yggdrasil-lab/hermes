@@ -2,6 +2,7 @@ import discord
 import os
 import asyncio
 import logging
+import shutil
 from discord.ext import commands
 
 # Configure Logging
@@ -38,22 +39,25 @@ if not TOKEN:
     logger.error("DISCORD_TOKEN not found!")
     exit(1)
 
-# Initialize Bot
+# Initialize Client (Simpler than Bot for event-only logic)
 intents = discord.Intents.default()
-intents.message_content = True  # Required for reading commands
-bot = commands.Bot(command_prefix='!', intents=intents)
+intents.message_content = True
+intents.guilds = True
+intents.guild_messages = True
+intents.dm_messages = True
+client = discord.Client(intents=intents)
 
-@bot.event
+@client.event
 async def on_ready():
-    logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    await bot.change_presence(activity=discord.Game(name="Watching the Vault"))
+    logger.info(f'Logged in as {client.user} (ID: {client.user.id})')
+    await client.change_presence(activity=discord.Game(name="Watching the Vault"))
 
-@bot.event
+@client.event
 async def on_message(message):
     logger.info(f"Received message from {message.author}: '{message.content}'")
 
     # Ignore self
-    if message.author == bot.user:
+    if message.author == client.user:
         return
 
     # Only process DMs or whitelisted channel (optional layer, but server is private anyway)
@@ -71,15 +75,36 @@ async def on_message(message):
 
     async with message.channel.typing():
         # Prepare CWD (Run in Vault)
-        # This ensures the agent sees all files relative to Vault root.
-        # History will be stored in .gemini/ inside the vault.
         cwd_path = VAULT_PATH
         
-        # Check for GEMINI.md in Vault (Auto-loaded by CLI)
-        if not os.path.exists(os.path.join(cwd_path, "GEMINI.md")):
-             logger.error("CRITICAL: GEMINI.md not found in vault!")
-             await message.reply("❌ **SYSTEM FAILURE:** Core Memory (`GEMINI.md`) is missing from the Vault.")
-             return
+        # Check for GEMINI.md location
+        root_gemini = os.path.join(cwd_path, "GEMINI.md")
+        alt_gemini = os.path.join(cwd_path, "Atlas", "Meta", "GEMINI.md")
+        
+        if not os.path.exists(root_gemini):
+            # Try to start from Atlas/Meta
+            if os.path.exists(alt_gemini):
+                try:
+                    # Create symlink in root so CLI finds it
+                    os.symlink(alt_gemini, root_gemini)
+                    logger.info("Symlinked Atlas/Meta/GEMINI.md to root.")
+                except Exception as e:
+                    logger.warning(f"Could not symlink GEMINI.md: {e}")
+                    # Keep going, maybe CLI allows config or we rely on copy? 
+                    # For now, fail if we can't link, as CLI is dumb.
+                    # Or maybe we can just copy it?
+                    try:
+                        import shutil
+                        shutil.copy(alt_gemini, root_gemini)
+                        logger.info("Copied GEMINI.md to root (Symlink failed).")
+                    except Exception as copy_e:
+                        logger.error(f"Failed to copy GEMINI.md: {copy_e}")
+                        await message.reply(f"❌ **System Failure:** Could not stage `GEMINI.md` from `Atlas/Meta`.")
+                        return
+            else:
+                 logger.error("CRITICAL: GEMINI.md not found in root OR Atlas/Meta!")
+                 await message.reply("❌ **SYSTEM FAILURE:** Core Memory (`GEMINI.md`) is missing from the Vault (Checked Root and `Atlas/Meta`).")
+                 return
 
         async def run_gemini(command_args):
             return await asyncio.create_subprocess_exec(
@@ -109,7 +134,6 @@ async def on_message(message):
             
             response_text = stdout.decode().strip()
             # Send (Chunked)
-            # ... existing chunking logic ...
             
             # Check for empty response
             if not response_text:
@@ -128,4 +152,4 @@ async def on_message(message):
             await message.reply(f"❌ **System Failure:** {str(e)}")
 
 # Run Bot
-bot.run(TOKEN)
+client.run(TOKEN)
