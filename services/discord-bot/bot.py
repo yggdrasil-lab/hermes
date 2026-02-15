@@ -158,14 +158,14 @@ async def on_message(message):
             logger.info(f"Relaying to gemini-cli (In Vault)...")
             
             # Attempt 1: Resume latest session with new prompt
-            # Syntax: gemini -r "latest" "prompt"
-            proc = await run_gemini(["gemini", "-r", "latest", discord_prompt])
+            # --yolo: auto-approve file edits (no human to approve in subprocess)
+            proc = await run_gemini(["gemini", "--yolo", "-r", "latest", discord_prompt])
             stdout, stderr = await proc.communicate()
             
             # If resume failed (no session yet), start fresh
             if proc.returncode != 0:
                 logger.info("No existing session, starting fresh...")
-                proc = await run_gemini(["gemini", discord_prompt])
+                proc = await run_gemini(["gemini", "--yolo", discord_prompt])
                 stdout, stderr = await proc.communicate()
             
             if proc.returncode != 0:
