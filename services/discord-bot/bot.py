@@ -2,8 +2,6 @@ import discord
 import os
 import asyncio
 import logging
-import shutil
-from discord.ext import commands
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -31,23 +29,44 @@ def get_secret(name):
 
 # Environment Variables
 TOKEN = get_secret('DISCORD_TOKEN')
-GEMINI_CLI_PATH = os.getenv('GEMINI_CLI_PATH', 'gemini_cli.py')
 VAULT_PATH = os.getenv('VAULT_PATH', '/vault')
-MIMIR_MODEL = os.getenv('MIMIR_MODEL', 'gemini-pro')
 
 if not TOKEN:
     logger.error("DISCORD_TOKEN not found!")
     exit(1)
 
-# Initialize Client (Simpler than Bot for event-only logic)
+# Initialize Client
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
+# Cached at startup
+personas = {}  # {'/zeus': 'Zeus', ...}
+system_prompt = ""  # Hermes.md content
+
 @client.event
 async def on_ready():
+    global personas, system_prompt
     logger.info(f'Logged in as {client.user} (ID: {client.user.id})')
     await client.change_presence(activity=discord.Game(name="Watching the Vault"))
+    
+    # Cache available personas from Agent files
+    agents_dir = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents")
+    if os.path.isdir(agents_dir):
+        for f in os.listdir(agents_dir):
+            if f.endswith('.md') and os.path.isfile(os.path.join(agents_dir, f)):
+                name = f.replace('.md', '')
+                personas[f'/{name.lower()}'] = name
+    logger.info(f"Loaded {len(personas)} personas: {list(personas.values())}")
+    
+    # Cache Hermes system prompt
+    hermes_path = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents", "Hermes.md")
+    if os.path.exists(hermes_path):
+        with open(hermes_path, 'r', encoding='utf-8') as f:
+            system_prompt = f.read().strip()
+        logger.info("Loaded Hermes system prompt.")
+    
+    logger.info("Hermes is ready. ⚡")
 
 @client.event
 async def on_message(message):
@@ -76,15 +95,6 @@ async def on_message(message):
         return
 
     # --- Persona Routing ---
-    # Dynamically discover active agents from Vault
-    agents_dir = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents")
-    personas = {}
-    if os.path.isdir(agents_dir):
-        for f in os.listdir(agents_dir):
-            if f.endswith('.md') and os.path.isfile(os.path.join(agents_dir, f)):
-                name = f.replace('.md', '')
-                personas[f'/{name.lower()}'] = name
-    
     persona = 'Zeus'  # Default
     for cmd, name in personas.items():
         if content.lower().startswith(cmd):
@@ -92,14 +102,7 @@ async def on_message(message):
             content = content[len(cmd):].strip()
             break
     
-    # Build Discord-aware prompt with persona directive
-    # Read the Hermes agent file as the system prompt (single source of truth)
-    hermes_prompt_path = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents", "Hermes.md")
-    system_prompt = ""
-    if os.path.exists(hermes_prompt_path):
-        with open(hermes_prompt_path, 'r', encoding='utf-8') as f:
-            system_prompt = f.read().strip()
-    
+    # Build prompt with system context + persona
     discord_prompt = (
         f"[SYSTEM PROMPT]\n{system_prompt}\n[END SYSTEM PROMPT]\n\n"
         f"[ACTIVE PERSONA: {persona}]\n"
@@ -109,47 +112,16 @@ async def on_message(message):
 
     # Ack with a reaction
     try:
-        await message.add_reaction("👁️")  # The All-Seeing Eye
-    except:
-        pass
+        await message.add_reaction("👁️")
+    except Exception as e:
+        logger.debug(f"Reaction failed: {e}")
 
     async with message.channel.typing():
-        # Prepare CWD (Run in Vault)
-        cwd_path = VAULT_PATH
-        
-        # Check for GEMINI.md location
-        root_gemini = os.path.join(cwd_path, "GEMINI.md")
-        alt_gemini = os.path.join(cwd_path, "Atlas", "Meta", "GEMINI.md")
-        
-        if not os.path.exists(root_gemini):
-            # Try to start from Atlas/Meta
-            if os.path.exists(alt_gemini):
-                try:
-                    # Create symlink in root so CLI finds it
-                    os.symlink(alt_gemini, root_gemini)
-                    logger.info("Symlinked Atlas/Meta/GEMINI.md to root.")
-                except Exception as e:
-                    logger.warning(f"Could not symlink GEMINI.md: {e}")
-                    # Keep going, maybe CLI allows config or we rely on copy? 
-                    # For now, fail if we can't link, as CLI is dumb.
-                    # Or maybe we can just copy it?
-                    try:
-                        import shutil
-                        shutil.copy(alt_gemini, root_gemini)
-                        logger.info("Copied GEMINI.md to root (Symlink failed).")
-                    except Exception as copy_e:
-                        logger.error(f"Failed to copy GEMINI.md: {copy_e}")
-                        await message.reply(f"❌ **System Failure:** Could not stage `GEMINI.md` from `Atlas/Meta`.")
-                        return
-            else:
-                 logger.error("CRITICAL: GEMINI.md not found in root OR Atlas/Meta!")
-                 await message.reply("❌ **SYSTEM FAILURE:** Core Memory (`GEMINI.md`) is missing from the Vault (Checked Root and `Atlas/Meta`).")
-                 return
 
         async def run_gemini(command_args):
             return await asyncio.create_subprocess_exec(
                 *command_args,
-                cwd=cwd_path,
+                cwd=VAULT_PATH,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
@@ -157,16 +129,11 @@ async def on_message(message):
         try:
             logger.info(f"Relaying to gemini-cli (In Vault)...")
             
-            # Attempt 1: Resume latest session with new prompt
-            # --yolo: auto-approve file edits (no human to approve in subprocess)
-            proc = await run_gemini(["gemini", "--yolo", "-r", "latest", discord_prompt])
+            # --yolo: auto-approve all tool calls (file edits + shell commands)
+            # -p: non-interactive prompt mode (cleaner output)
+            # Note: .gemini/settings.json also sets auto_edit + includeThoughts: false
+            proc = await run_gemini(["gemini", "--yolo", "-p", discord_prompt])
             stdout, stderr = await proc.communicate()
-            
-            # If resume failed (no session yet), start fresh
-            if proc.returncode != 0:
-                logger.info("No existing session, starting fresh...")
-                proc = await run_gemini(["gemini", "--yolo", discord_prompt])
-                stdout, stderr = await proc.communicate()
             
             if proc.returncode != 0:
                  logger.error(f"Gemini CLI Error: {stderr.decode()}")
@@ -174,7 +141,6 @@ async def on_message(message):
                  return
             
             response_text = stdout.decode().strip()
-            # Send (Chunked)
             
             # Check for empty response
             if not response_text:
