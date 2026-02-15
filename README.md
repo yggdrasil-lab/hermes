@@ -4,30 +4,40 @@
 
 ## Mission
 
-I am the central switchboard of your infrastructure. My mission is to ensure that no critical alert or security token remains unheard. I translate the internal signals of your servers into the clear voice of email or the chime of chat, routing information where it is needed most.
+I am the central switchboard and intelligence interface of your infrastructure. My mission is two-fold:
+1.  **Notification Gateway:** Ensure no critical alert remains unheard, translating internal signals into Email or Chat.
+2.  **Interactive Intelligence:** Provide a secure, private interface to the Second Brain via Discord, powered by the Google Gemini CLI.
 
 ## Core Philosophy
 
-*   **Unified Input**: I am the single entry point for all notifications. No matter the source, the interface remains consistent.
-*   **Smart Routing**: I choose the path that fits the priority—Email for permanence and logs, Chat for immediate attention.
-*   **Abstraction**: I hide the complexities of external cloud APIs, allowing the rest of the infrastructure to remain decoupled and focused.
+*   **Unified Input**: I am the single entry point for all notifications.
+*   **Smart Routing**: I choose the path that fits the priority—Email for logs, Chat for attention.
+*   **Secure Intelligence**: I expose the power of the Second Brain (Vault) through a sandboxed, private Discord channel, maintaining full context and history.
 
 ---
 
 ## Tech Stack
 
-*   **Python 3.11+**: Primary programming language.
-*   **FastAPI**: Web framework for the REST API.
-*   **Boto3**: AWS SDK for direct Amazon SES integration.
-*   **aiosmtpd**: Asynchronous SMTP server library.
+*   **Python 3.11+**: Core logic for API and Bot.
+*   **FastAPI**: Notification Gateway REST API.
+*   **Discord.py**: Interactive Bot interface.
+*   **Google Gemini CLI (Node.js)**: Headless AI agent for processing prompts and vault queries.
+*   **Boto3**: AWS SES integration.
 
 ## Architecture
 
-The system operates through the following components:
+The system operates through two primary microservices:
 
-1.  **HTTP Interface**: A RESTful API for modern service integration.
-2.  **SMTP Gateway**: A listener on port 2525 for legacy mail routing (e.g., Authelia).
-3.  **Modular Provider Logic**: An extensible backend supporting AWS SES (Current) and Discord (Planned).
+### 1. Notification Gateway (API)
+*   **HTTP Interface**: RESTful API for service integration.
+*   **SMTP Gateway**: Listener on port 2525 for legacy mail routing.
+*   **AWS SES**: Backend for reliable email delivery.
+
+### 2. Discord Bot (Interface)
+*   **Private Channel**: Secure interface to the system.
+*   **Gemini CLI**: Headless agent running in the Vault context.
+*   **Session Persistence**: Maintains daily conversation history.
+*   **Vault Access**: Read/Write access to the Second Brain for journaling and querying.
 
 ## Prerequisites
 
@@ -39,12 +49,15 @@ The system operates through the following components:
 
 ```text
 hermes/
-├── app/
-│   ├── core/         # Configuration and settings
-│   ├── models/       # Pydantic schemas
-│   ├── services/     # Logic for notification providers (Email, Discord, etc.)
-│   └── main.py       # FastAPI application and routes
-├── integration_test/ # Integration test suite
+├── app/              # Notification Gateway (API)
+│   ├── core/
+│   ├── services/
+│   └── main.py
+├── services/         # Microservices
+│   └── discord-bot/  # Discord Interface + Gemini CLI
+├── integration_test/
+├── scripts/          # Deployment & Secret Utils
+└── docker-compose.yml
 ├── requirements.txt  # Python dependencies
 └── Dockerfile        # Production build configuration
 ```
@@ -61,12 +74,18 @@ cp .env.example .env
 
 ### 2. Configuration
 
-Update `.env` with your IAM credentials and verified sender:
+Update `.env` (or Github Secrets for Prod) with:
+
+### Notification Gateway
 - `AWS_ACCESS_KEY_ID`: IAM Access Key.
 - `AWS_SECRET_ACCESS_KEY`: IAM Secret Key.
 - `AWS_REGION`: AWS Region (e.g., `ap-southeast-2`).
 - `EMAIL_SENDER`: Your verified sender address.
-- `ENV` (Optional): Environment tag prepended to email subjects (e.g., `DEV`, `PROD`).
+
+### Discord Bot (Secrets)
+- `DISCORD_TOKEN`: Bot Token from Developer Portal.
+- `GEMINI_CONFIG`: Contents of `~/.gemini/config.json` (Auth).
+- `OBSIDIAN_VAULT_PATH`: Host path to the Second Brain (Environment Variable).
 
 ## Execution
 
