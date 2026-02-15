@@ -4,6 +4,8 @@ on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 0' # Weekly rebuild (Sundays at 3am) to pick up latest gemini-cli
 
 jobs:
   deploy:
@@ -26,10 +28,14 @@ jobs:
         env:
           AWS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          GEMINI_CONFIG: ${{ secrets.GEMINI_CONFIG }}
         run: |
           chmod +x scripts/ensure_secret.sh
           echo "HERMES_AWS_ACCESS_KEY_ID_NAME=$(echo "$AWS_KEY" | ./scripts/ensure_secret.sh hermes_aws_access_key_id)" >> $GITHUB_ENV
           echo "HERMES_AWS_SECRET_ACCESS_KEY_NAME=$(echo "$AWS_SECRET" | ./scripts/ensure_secret.sh hermes_aws_secret_access_key)" >> $GITHUB_ENV
+          echo "HERMES_DISCORD_TOKEN_NAME=$(echo "$DISCORD_TOKEN" | ./scripts/ensure_secret.sh hermes_discord_token)" >> $GITHUB_ENV
+          echo "HERMES_GEMINI_CONFIG_NAME=$(echo "$GEMINI_CONFIG" | ./scripts/ensure_secret.sh hermes_gemini_config)" >> $GITHUB_ENV
 
       - name: Build and Deploy with Docker Compose
         env:
@@ -37,6 +43,7 @@ jobs:
           EMAIL_SENDER: ${{ vars.EMAIL_SENDER }}
           ENV: ${{ vars.ENV }}
           REGISTRY_PREFIX: ${{ vars.REGISTRY_PREFIX }}
+          OBSIDIAN_VAULT_PATH: ${{ vars.OBSIDIAN_VAULT_PATH }}
         run: |
           chmod +x scripts/deploy.sh
           ./scripts/deploy.sh "hermes" docker-compose.yml

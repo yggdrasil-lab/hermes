@@ -28,6 +28,30 @@ services:
         target: AWS_SECRET_ACCESS_KEY
     restart: unless-stopped
 
+  discord-bot:
+    image: ${REGISTRY_PREFIX}hermes-bot:${STACK_NAME:-latest}
+    build: ./services/discord-bot
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    environment:
+      - DISCORD_TOKEN_FILE=/run/secrets/discord_token
+      - VAULT_PATH=/vault
+    volumes:
+      - ${OBSIDIAN_VAULT_PATH}/second-brain:/vault:rw
+    secrets:
+      - source: hermes_discord_token
+        target: discord_token
+      - source: hermes_gemini_config
+        target: .gemini
+    networks:
+      - aether-net
+
 secrets:
   hermes_aws_access_key_id:
     external: true
@@ -35,6 +59,12 @@ secrets:
   hermes_aws_secret_access_key:
     external: true
     name: ${HERMES_AWS_SECRET_ACCESS_KEY_NAME}
+  hermes_discord_token:
+    external: true
+    name: ${HERMES_DISCORD_TOKEN_NAME}
+  hermes_gemini_config:
+    external: true
+    name: ${HERMES_GEMINI_CONFIG_NAME}
 
 networks:
   aether-net:
