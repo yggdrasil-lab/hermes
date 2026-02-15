@@ -60,10 +60,21 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    # Only process DMs or whitelisted channel (optional layer, but server is private anyway)
-    # Using 'Main' channel ID could be added here later.
+    # Smart Trigger:
+    # 1. Always respond to DMs
+    # 2. Respond to Channels ONLY if mentioned
+    is_dm = isinstance(message.channel, discord.DMChannel)
+    is_mentioned = client.user in message.mentions
+
+    if not is_dm and not is_mentioned:
+        return
 
     content = message.content.strip()
+    
+    # If mentioned in channel, strip the mention to get clean prompt
+    if is_mentioned:
+        content = content.replace(f'<@{client.user.id}>', '').replace(f'<@!{client.user.id}>', '').strip()
+
     if not content:
         return
 
