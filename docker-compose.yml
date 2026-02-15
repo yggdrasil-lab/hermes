@@ -44,11 +44,10 @@ services:
       - VAULT_PATH=/vault
     volumes:
       - ${OBSIDIAN_VAULT_PATH}/second-brain:/vault:rw
+      - ${GEMINI_CONFIG_PATH}:/root/.gemini:ro
     secrets:
       - source: hermes_discord_token
         target: discord_token
-      - source: hermes_gemini_config
-        target: .gemini
     networks:
       - aether-net
 
@@ -62,9 +61,7 @@ secrets:
   hermes_discord_token:
     external: true
     name: ${HERMES_DISCORD_TOKEN_NAME}
-  hermes_gemini_config:
-    external: true
-    name: ${HERMES_GEMINI_CONFIG_NAME}
+
 
 networks:
   aether-net:
