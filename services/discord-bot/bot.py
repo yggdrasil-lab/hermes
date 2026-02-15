@@ -50,6 +50,8 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    logger.info(f"Received message from {message.author}: '{message.content}'")
+
     # Ignore self
     if message.author == bot.user:
         return

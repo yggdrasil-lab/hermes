@@ -1,7 +1,7 @@
 services:
   hermes:
     image: ${REGISTRY_PREFIX}hermes:${STACK_NAME:-latest}
-    build: .
+    build: ./app
     labels:
       - "com.docker.compose.project=${STACK_NAME}"
     ports:
