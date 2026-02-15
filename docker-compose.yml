@@ -44,7 +44,7 @@ services:
       - VAULT_PATH=/vault
     volumes:
       - ${OBSIDIAN_VAULT_PATH}/second-brain:/vault:rw
-      - ${GEMINI_CONFIG_PATH}:/root/.gemini:ro
+      - ${GEMINI_CONFIG_PATH}:/root/.gemini:rw
     secrets:
       - source: hermes_discord_token
         target: discord_token
