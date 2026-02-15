@@ -75,6 +75,38 @@ async def on_message(message):
     if not content:
         return
 
+    # --- Persona Routing ---
+    # Dynamically discover active agents from Vault
+    agents_dir = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents")
+    personas = {}
+    if os.path.isdir(agents_dir):
+        for f in os.listdir(agents_dir):
+            if f.endswith('.md') and os.path.isfile(os.path.join(agents_dir, f)):
+                name = f.replace('.md', '')
+                personas[f'/{name.lower()}'] = name
+    
+    persona = 'Zeus'  # Default
+    for cmd, name in personas.items():
+        if content.lower().startswith(cmd):
+            persona = name
+            content = content[len(cmd):].strip()
+            break
+    
+    # Build Discord-aware prompt with persona directive
+    # Read the Hermes agent file as the system prompt (single source of truth)
+    hermes_prompt_path = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents", "Hermes.md")
+    system_prompt = ""
+    if os.path.exists(hermes_prompt_path):
+        with open(hermes_prompt_path, 'r', encoding='utf-8') as f:
+            system_prompt = f.read().strip()
+    
+    discord_prompt = (
+        f"[SYSTEM PROMPT]\n{system_prompt}\n[END SYSTEM PROMPT]\n\n"
+        f"[ACTIVE PERSONA: {persona}]\n"
+        f"Read and adopt Atlas/Meta/Agents/{persona}.md directives.\n\n"
+        f"[USER MESSAGE]\n{content}"
+    )
+
     # Ack with a reaction
     try:
         await message.add_reaction("👁️")  # The All-Seeing Eye
@@ -125,14 +157,15 @@ async def on_message(message):
         try:
             logger.info(f"Relaying to gemini-cli (In Vault)...")
             
-            # Attempt 1: Resume (Last session in Vault folder)
-            proc = await run_gemini(["gemini", "run", "--resume", content])
+            # Attempt 1: Resume latest session with new prompt
+            # Syntax: gemini -r "latest" "prompt"
+            proc = await run_gemini(["gemini", "-r", "latest", discord_prompt])
             stdout, stderr = await proc.communicate()
             
-            # If failed (likely 'No session found to resume'), try fresh
+            # If resume failed (no session yet), start fresh
             if proc.returncode != 0:
-                logger.info("Resume failed (new session?), retrying without --resume...")
-                proc = await run_gemini(["gemini", "run", content])
+                logger.info("No existing session, starting fresh...")
+                proc = await run_gemini(["gemini", discord_prompt])
                 stdout, stderr = await proc.communicate()
             
             if proc.returncode != 0:
