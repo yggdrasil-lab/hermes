@@ -12,8 +12,9 @@ ENV PYTHONUNBUFFERED=1
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the current directory contents into the container at /app
-COPY . .
+# Copy the current directory contents into the container at /app/app
+# Context is ./app, so we copy content to a new 'app' folder to preserve package structure
+COPY . app/
 
 # Expose port 8000 (HTTP) and 2525 (SMTP)
 EXPOSE 8000
