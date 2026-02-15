@@ -40,8 +40,8 @@ if not TOKEN:
     exit(1)
 
 # Initialize Client (Simpler than Bot for event-only logic)
-# TEMP: Using all intents to debug channel message issue
-intents = discord.Intents.all()
+intents = discord.Intents.default()
+intents.message_content = True
 client = discord.Client(intents=intents)
 
 @client.event
