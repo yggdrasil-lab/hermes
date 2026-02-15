@@ -20,4 +20,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Link the Docker Secret to where the CLI expects it (~/.gemini or ~/.config/...)
-CMD ["sh", "-c", "mkdir -p /root/.config/google-gemini-cli && ln -sf /run/secrets/.gemini /root/.gemini && ln -sf /run/secrets/.gemini /root/.config/google-gemini-cli/config.json && python bot.py"]
+CMD ["sh", "-c", "mkdir -p /root/.gemini && ln -sf /run/secrets/.gemini /root/.gemini/settings.json && ln -sf /run/secrets/.gemini /root/.gemini/config.json && python bot.py"]
