@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     nodejs \
     npm \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Install @google/gemini-cli globally
