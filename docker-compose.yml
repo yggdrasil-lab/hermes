@@ -19,6 +19,7 @@ services:
       - AWS_REGION
       - EMAIL_SENDER
       - ENV
+      - TZ=Pacific/Auckland
     networks:
       - aether-net
     secrets:
@@ -42,6 +43,7 @@ services:
     environment:
       - DISCORD_TOKEN_FILE=/run/secrets/discord_token
       - VAULT_PATH=/vault
+      - TZ=Pacific/Auckland
     volumes:
       - ${OBSIDIAN_VAULT_PATH}/second-brain:/vault:rw
       - ${GEMINI_CONFIG_PATH}:/root/.gemini:rw
