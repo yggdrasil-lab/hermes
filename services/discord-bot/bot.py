@@ -91,6 +91,31 @@ async def on_message(message):
     if is_mentioned:
         content = content.replace(f'<@{client.user.id}>', '').replace(f'<@!{client.user.id}>', '').strip()
 
+    # Handle Attachments
+    attachments = message.attachments
+    if attachments:
+        import datetime
+        # Use x/Temp for incoming files (Temporary holding)
+        temp_dir = os.path.join(VAULT_PATH, "x", "Temp")
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        uploaded_files = []
+        for attachment in attachments:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{timestamp}_{attachment.filename}"
+            filepath = os.path.join(temp_dir, filename)
+            
+            try:
+                await attachment.save(filepath)
+                # Use relative path for the agent
+                uploaded_files.append(f"x/Temp/{filename}")
+                logger.info(f"Saved attachment: {filepath}")
+            except Exception as e:
+                logger.error(f"Failed to save attachment {filename}: {e}")
+
+        if uploaded_files:
+            content += f"\n\n[System: User attached files stored in x/Temp at:]\n" + "\n".join(uploaded_files)
+
     if not content:
         return
 
