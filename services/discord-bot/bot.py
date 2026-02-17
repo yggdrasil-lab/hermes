@@ -40,34 +40,12 @@ intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
-# Cached at startup
-personas = {}  # {'/zeus': 'Zeus', ...}
-system_prompt = ""  # Hermes.md content
-
 @client.event
 async def on_ready():
-    global personas, system_prompt
+    global system_prompt
     logger.info(f'Logged in as {client.user} (ID: {client.user.id})')
     await client.change_presence(activity=discord.Game(name="Watching the Vault"))
     
-    # Cache available personas from Agent files
-    agents_dir = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents")
-    if os.path.isdir(agents_dir):
-        for f in os.listdir(agents_dir):
-            if f.endswith('.md') and os.path.isfile(os.path.join(agents_dir, f)):
-                name = f.replace('.md', '')
-                personas[f'/{name.lower()}'] = name
-    logger.info(f"Loaded {len(personas)} personas: {list(personas.values())}")
-    
-    # Cache Hermes system prompt
-    hermes_path = os.path.join(VAULT_PATH, "Atlas", "Meta", "Agents", "Hermes.md")
-    if os.path.exists(hermes_path):
-        with open(hermes_path, 'r', encoding='utf-8') as f:
-            system_prompt = f.read().strip()
-        logger.info("Loaded Hermes system prompt.")
-    
-    logger.info("Hermes is ready. ⚡")
-
 @client.event
 async def on_message(message):
     logger.info(f"Received message from {message.author}: '{message.content}'")
@@ -119,19 +97,11 @@ async def on_message(message):
     if not content:
         return
 
-    # --- Persona Routing ---
-    persona = 'Zeus'  # Default
-    for cmd, name in personas.items():
-        if content.lower().startswith(cmd):
-            persona = name
-            content = content[len(cmd):].strip()
-            break
-    
-    # Build prompt with system context + persona
+    # Build prompt with SYSTEM reference + USER
+    # We rely on the model to read Hermes.md from the vault context.
     discord_prompt = (
-        f"[SYSTEM PROMPT]\n{system_prompt}\n[END SYSTEM PROMPT]\n\n"
-        f"[ACTIVE PERSONA: {persona}]\n"
-        f"Read and adopt Atlas/Meta/Agents/{persona}.md directives.\n\n"
+        f"[SYSTEM: Role=Atlas/Meta/Agents/Hermes.md]\n"
+        f"You are Hermes. Execute tools silently. Output ONLY the final response.\n"
         f"[USER MESSAGE]\n{content}"
     )
 
