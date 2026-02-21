@@ -188,6 +188,9 @@ async def on_message(message):
                 await message.reply("😶 The Oracle is silent. (Empty response)")
                 return
 
+            # Strip Wiki-Links before sending to Discord
+            response_text = re.sub(r'\[\[(?:[^|\]]+\|)?([^\]]+)\]\]', r'\1', response_text)
+
             # Chunking Logic (Discord limits to 2000 chars)
             max_length = 2000
             chunks = [response_text[i:i+max_length] for i in range(0, len(response_text), max_length)]
