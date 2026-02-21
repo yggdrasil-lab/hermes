@@ -105,7 +105,6 @@ async def on_message(message):
     discord_prompt = (
         f"[SYSTEM: CORE RULES=Atlas/Meta/GEMINI.md]\n"
         f"[SYSTEM: Role=Atlas/Meta/Agents/Hermes.md]\n"
-        f"You are Hermes. Execute tools silently. Output ONLY the final response.\n"
         f"[USER MESSAGE]\n{content}"
     )
 
@@ -134,18 +133,22 @@ async def on_message(message):
             # Setup command
             # --yolo: auto-approve all tool calls (file edits + shell commands)
             # -p: non-interactive prompt mode (cleaner output)
-            cmd_args = ["gemini", "--yolo", "-p"]
+            cmd_args = ["gemini", "--yolo"]
             if session_id:
                 cmd_args.extend(["--resume", session_id])
             
-            cmd_args.append(discord_prompt)
+            cmd_args.extend(["-p", discord_prompt])
             
             proc = await run_gemini(cmd_args)
             stdout, stderr = await proc.communicate()
             
             if proc.returncode != 0:
-                 logger.error(f"Gemini CLI Error: {stderr.decode()}")
-                 await message.reply(f"⚠️ **Pantheon Error:**\n```\n{stderr.decode()}\n```")
+                 error_text = stderr.decode()
+                 logger.error(f"Gemini CLI Error: {error_text}")
+                 # Ensure we don't exceed Discord's 2000 char limit on error messages
+                 if len(error_text) > 1900:
+                     error_text = error_text[:1900] + "\n...[Truncated]"
+                 await message.reply(f"⚠️ **Pantheon Error:**\n```\n{error_text}\n```")
                  return
             
             response_text = stdout.decode().strip()
