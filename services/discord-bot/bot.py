@@ -103,6 +103,7 @@ async def on_message(message):
     # Build prompt with SYSTEM reference + USER
     # We rely on the model to read Hermes.md from the vault context.
     discord_prompt = (
+        f"[SYSTEM: CORE RULES=Atlas/Meta/GEMINI.md]\n"
         f"[SYSTEM: Role=Atlas/Meta/Agents/Hermes.md]\n"
         f"You are Hermes. Execute tools silently. Output ONLY the final response.\n"
         f"[USER MESSAGE]\n{content}"
