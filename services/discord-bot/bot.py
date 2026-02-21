@@ -40,6 +40,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
+# Store sessions per user ID for conversation continuity
+active_sessions = {}
+
 @client.event
 async def on_ready():
     global system_prompt
@@ -124,10 +127,19 @@ async def on_message(message):
         try:
             logger.info(f"Relaying to gemini-cli (In Vault)...")
             
+            # Check for an active session to resume
+            session_id = active_sessions.get(message.author.id)
+            
+            # Setup command
             # --yolo: auto-approve all tool calls (file edits + shell commands)
             # -p: non-interactive prompt mode (cleaner output)
-            # Note: .gemini/settings.json also sets auto_edit + includeThoughts: false
-            proc = await run_gemini(["gemini", "--yolo", "-p", discord_prompt])
+            cmd_args = ["gemini", "--yolo", "-p"]
+            if session_id:
+                cmd_args.extend(["--resume", session_id])
+            
+            cmd_args.append(discord_prompt)
+            
+            proc = await run_gemini(cmd_args)
             stdout, stderr = await proc.communicate()
             
             if proc.returncode != 0:
@@ -136,6 +148,27 @@ async def on_message(message):
                  return
             
             response_text = stdout.decode().strip()
+            
+            # Extract JSON output 
+            try:
+                import json
+                # In case CLI puts extra logs before JSON
+                if "{" in response_text:
+                    json_start = response_text.find("{")
+                    json_end = response_text.rfind("}") + 1
+                    json_str = response_text[json_start:json_end]
+                    
+                    output_data = json.loads(json_str)
+                    
+                    # Update active session ID
+                    new_session = output_data.get("session_id")
+                    if new_session:
+                        active_sessions[message.author.id] = new_session
+                        
+                    # Reassign output text
+                    response_text = output_data.get("response", response_text)
+            except Exception as e:
+                logger.debug(f"JSON Parse warning/failed: {e}")
             
             # Check for empty response
             if not response_text:
