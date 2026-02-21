@@ -152,23 +152,32 @@ async def on_message(message):
             # Extract JSON output 
             try:
                 import json
-                # In case CLI puts extra logs before JSON
-                if "{" in response_text:
-                    json_start = response_text.find("{")
-                    json_end = response_text.rfind("}") + 1
-                    json_str = response_text[json_start:json_end]
+                import re
+                
+                # Remove any ANSI escape sequences added by the CLI
+                ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+                clean_text = ansi_escape.sub('', response_text)
+                
+                if "{" in clean_text:
+                    json_start = clean_text.find("{")
+                    json_end = clean_text.rfind("}") + 1
+                    json_str = clean_text[json_start:json_end]
                     
-                    output_data = json.loads(json_str)
-                    
-                    # Update active session ID
-                    new_session = output_data.get("session_id")
-                    if new_session:
-                        active_sessions[message.author.id] = new_session
+                    try:
+                        output_data = json.loads(json_str)
                         
-                    # Reassign output text
-                    response_text = output_data.get("response", response_text)
+                        # Update active session ID
+                        if "session_id" in output_data:
+                            active_sessions[message.author.id] = output_data["session_id"]
+                            
+                        # Reassign output text
+                        if "response" in output_data:
+                            response_text = output_data["response"]
+                            
+                    except json.JSONDecodeError as je:
+                        logger.error(f"Failed to parse JSON: {je}. Extracted string starts with: {json_str[:30]!r}")
             except Exception as e:
-                logger.debug(f"JSON Parse warning/failed: {e}")
+                logger.error(f"JSON logic error: {e}")
             
             # Check for empty response
             if not response_text:
