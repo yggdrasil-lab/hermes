@@ -44,6 +44,7 @@ services:
       - DISCORD_TOKEN_FILE=/run/secrets/discord_token
       - VAULT_PATH=/vault
       - TZ=Pacific/Auckland
+      - GEMINI_CLI_TRUST_WORKSPACE=true
     volumes:
       - ${OBSIDIAN_VAULT_PATH}/second-brain:/vault:rw
       - ${GEMINI_CONFIG_PATH}:/root/.gemini:rw
