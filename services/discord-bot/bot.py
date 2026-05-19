@@ -31,6 +31,9 @@ def get_secret(name):
 TOKEN = get_secret('DISCORD_TOKEN')
 VAULT_PATH = os.getenv('VAULT_PATH', '/vault')
 
+# Ensure Gemini CLI trusts the workspace directory in this headless environment
+os.environ["GEMINI_CLI_TRUST_WORKSPACE"] = "true"
+
 if not TOKEN:
     logger.error("DISCORD_TOKEN not found!")
     exit(1)
