@@ -26,10 +26,6 @@ async def send_notification(request: NotificationRequest):
         except ClientError as e:
             raise HTTPException(status_code=500, detail=str(e))
     
-    elif request.channel == "discord":
-        # Placeholder for future implementation
-        return {"status": "skipped", "detail": "Discord channel not yet implemented"}
-    
     else:
         # Should be caught by Pydantic validation, but defensive programming
         raise HTTPException(status_code=400, detail="Unsupported channel")
