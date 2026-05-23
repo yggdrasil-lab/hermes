@@ -72,7 +72,14 @@ cd hermes
 cp .env.example .env
 ```
 
-### 2. Configuration
+### 2. Host Setup
+Before deploying, run the host setup script to ensure that the required path for the Obsidian vault exists on the host machine with correct permissions:
+```bash
+chmod +x setup_host.sh
+./setup_host.sh
+```
+
+### 3. Configuration
 
 Update `.env` (or Github Secrets for Prod) with:
 
